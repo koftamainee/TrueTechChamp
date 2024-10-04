@@ -3,7 +3,7 @@ import time
 
 run_with_UI = False
 border_value = 65
-token = f"25822b31-3bc9-44ef-a4b0-228dbe6063db4088426d-cdbc-471d-bf8c-5161faaa3076"
+token = ""
 
 def forward():
     if run_with_UI:
