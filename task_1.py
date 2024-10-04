@@ -9,11 +9,13 @@ def show_maze(arr, type = 2):
     for i in range(l):
         print(i, end=(" " * (3 - len(str(i)))))
     print("\n")
+
     ch = lambda x: "* " if x else "  "
     for i in range(l):
-        index = l-i-1
+        index = str(l-i-1)
+        index = index + (" " * (2 - len(str(index))))
         if type == 1:
-            print(index, arr[i], index, end="\n")
+            print(index , arr[i], index, end="\n")
         else:
             print(index, *list(map(ch, arr[i])), index, end="\n")
 
@@ -93,6 +95,63 @@ def left():
 def restart():
     requests.post(f"http://127.0.0.1:8801/api/v1/maze/restart?token=(token)")
 
+#TODO: реализовать отправку матрицы
+def send_matrix(arr):
+    data = {"key": arr}
+    res = requests.post(f"http://127.0.0.1:8801/api/v1/matrix/send?token=(token)", json = data)
+    print(res, res.status_code)
+
+def processing_maze_data(maze):
+    result_maze = [[0]*16]*16
+    result_maze = np.array(result_maze)
+    for i in range(1, 32, 2):
+        for j in range(1, 32, 2):
+            dt = [maze[i-1][j], maze[i][j+1], maze[i+1][j], maze[i][j-1]]
+            ri = int(i/2)
+            rj = int(j/2)
+            res = -1
+            if (sum(dt) == 0):
+                res = 0
+            elif (sum(dt) == 1 and dt[3] == 1):
+                res = 1
+            elif (sum(dt) == 1 and dt[0] == 1):
+                res = 2
+            elif (sum(dt) == 1 and dt[1] == 1):
+                res = 3
+            elif (sum(dt) == 1 and dt[2] == 1):
+                res = 4
+
+            elif (sum(dt) == 2 and dt[2] == 1 and dt[3] == 1):
+                res = 5
+            elif (sum(dt) == 2 and dt[2] == 1 and dt[1] == 1):
+                res = 6
+            elif (sum(dt) == 2 and dt[0] == 1 and dt[1] == 1):
+                res = 7
+            elif (sum(dt) == 2 and dt[0] == 1 and dt[3] == 1):
+                res = 8
+
+            elif (sum(dt) == 2 and dt[3] == 1 and dt[1] == 1):
+                res = 9
+            elif (sum(dt) == 2 and dt[0] == 1 and dt[2] == 1):
+                res = 10
+
+            elif (sum(dt) == 3 and dt[3] == 0):
+                res = 11
+            elif (sum(dt) == 3 and dt[2] == 0):
+                res = 12
+            elif (sum(dt) == 3 and dt[1] == 0):
+                res = 13
+            elif (sum(dt) == 3 and dt[0] == 0):
+                res = 14
+
+            elif (sum(dt) == 4):
+                res = 15
+
+            #print(i, j, ri, rj, res)
+            result_maze[ri][rj] = res
+
+    return result_maze
+
 
 def sensors():
     if run_with_UI == "cells":
@@ -124,7 +183,7 @@ maze = np.array(maze)
 
 #while (True):
 print("yaw, f, b, l, r, l45, r45")
-for i in range(2):
+for i in range(0):
     print("--------------")
     data = sensors()
     if i == 0:
@@ -153,3 +212,7 @@ for i in range(2):
 
 show_maze(maze)
 print(position)
+result = processing_maze_data(maze)
+result = result.tolist()
+print(result)
+send_matrix(result)
