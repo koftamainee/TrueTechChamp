@@ -41,6 +41,3 @@ def sensors():
     r45 = int(data["right_45_distance"] < border_value)
     return yaw, f, b, l, r, l45, r45,
 
-right()
-right()
-print(sensors())
