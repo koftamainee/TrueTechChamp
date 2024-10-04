@@ -1,2 +1,1 @@
-git checkout -b .idea
-git checkout -b .venv
+git checkout -b .idea .venv
