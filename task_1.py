@@ -3,6 +3,15 @@ import numpy as np
 import math
 import time
 
+import os
+from dotenv import load_dotenv
+
+# angle [-inf:+inf], return normalized angle [-180:180]
+def normalize_angle(angle: int) -> int:
+    normalized_angle = (angle + 180) % 360 - 180
+    return normalized_angle
+        
+
 def show_maze(arr, type = 2):
     l = len(arr)
     print("  ", end="")
@@ -25,9 +34,12 @@ def show_maze(arr, type = 2):
         print(i, end=(" " * (3 - len(str(i)))))
     print("\n")
 
+
 def update_position(action):
     yaw = position[2]
-    if (yaw == 0 or yaw == 180):
+    yaw = normalize_angle(yaw)
+    print(f"update_position normalized yaw: {yaw}")
+    if (yaw == 0 or abs(yaw) == 180):
         if action == "forward":
             position[1] += 1 if yaw == 0 else -1
         elif action == "backward":
@@ -45,12 +57,14 @@ def update_position(action):
 
     print(action, position)
 
+
 def update_maze(data):
-    yaw = int(position[2] // 90)
+    yaw = normalize_angle(position[2])
+    yaw //= 90
 
     x = (position[0])*2+1
     y = (15-position[1])*2+1
-    #print(x, y)
+    print(f"maze position: x: {x}, y: {y}")
 
     wf = [1, 4, 3, 2]
     wr = [2, 1, 4, 3]
@@ -153,6 +167,26 @@ def processing_maze_data(maze):
     return result_maze
 
 
+# data[1] -- forward
+# data[2] -- right 
+# data[3] -- backwards 
+# data[4] -- left
+def move_to(path: str) -> None:
+    time.sleep(0.04)
+    for direction in path:
+        if direction == "f":
+            forward()
+        elif direction == "l":
+            left()
+            forward()
+        elif direction == "r":
+            right()
+            forward()
+        else:
+            right()
+            right()
+
+
 def sensors():
     if run_with_UI == "cells":
         data = requests.get(f"http://127.0.0.1:8801/api/v1/robot-cells/sensor-data?token=(token)").json()
@@ -170,9 +204,34 @@ def sensors():
     return yaw, f, r, b, l #l45, r45
 
 
+# data[1] -- forward
+# data[2] -- right 
+# data[3] -- backwards 
+# data[4] -- left
+def move() -> str:
+    direction = ""
+    if data[1]:
+        forward()
+    elif data[4]:
+        left()
+        forward()
+    elif data[2]:
+        right()
+        forward()
+    else:
+        right()
+        right()
+    return direction
+
+
 if __name__ == "__main__":
-    token = f"b1d9449e-1923-4ad5-834f-c2e8ec07d0ac483d9575-385e-472a-823b-c8cbf18a7720"
+    # put your token to TRUETECH_TOKEN in .env
+    load_dotenv()
+    token = os.getenv("TRUETECH_TOKEN")
+
     #run_with_UI = check_simulator()
+    cnt = 0
+    prev_coords = [-1, -1]
     border_value = 65
     run_with_UI = True
     run_with_UI = "cells" if run_with_UI else "python"
@@ -183,31 +242,52 @@ if __name__ == "__main__":
 
     #while (True):
     print("yaw, f, b, l, r, l45, r45")
-    for i in range(0):
+    passed = []
+    cells_cnt = 0
+    #for i in range(50):
+    while (cells_cnt != 256):
+
+        # max speed for unix systems
+        time.sleep(0.04)
+
         print("--------------")
         data = sensors()
-        if i == 0:
+        coords = position[:2]
+        print()
+        print(f"Position: {coords}, cells_cnt = {cells_cnt}")
+        print()
+        if cells_cnt == 0:
             print(position)
+        if coords not in passed:
+            passed.append(coords)
+            cells_cnt += 1
+            
             print("--------------")
+
         update_maze(data)
         print(data, end=" ")
-        if (data[1] + data[2] + data[4]) >= 2: #проверка на развилку
-            #TODO: что делать при развилке
-            # print("Развилка")
-            # break
-            forward()
-        else:
-            if data[1]:
-                forward()
-            elif data[4]:
-                left()
-                forward()
-            elif data[2]:
-                right()
-                forward()
+        print(cells_cnt)
+        
+
+        if (data[1] + data[2] + data[4]) > 1:
+            if data[1] == 1 and [coords[0], coords[1] + 1] not in passed:
+                move_to("f")
+            elif data[2] == 1 and [coords[0] + 1, coords[1]] not in passed:
+                move_to("r")
+            elif data[4] == 1 and [coords[0] - 1, coords[1]] not in passed:
+                move_to("l")
             else:
-                right()
-                right()
+                move()
+
+        else:
+            move()
+
+        if prev_coords == coords:
+            cnt += 1
+        prev_coords = coords
+        if cnt > 30:
+            break
+        # input()
 
     show_maze(maze)
     print(position)
