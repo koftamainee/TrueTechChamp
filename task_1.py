@@ -98,8 +98,7 @@ def restart():
 
 #TODO: реализовать отправку матрицы
 def send_matrix(arr):
-    data = {"key": arr}
-    res = requests.post(f"http://127.0.0.1:8801/api/v1/matrix/send?token=(token)", json = data)
+    res = requests.post(f"http://127.0.0.1:8801/api/v1/matrix/send?token=(token)", json = arr)
     print(res, res.status_code)
 
 def processing_maze_data(maze):
@@ -168,52 +167,51 @@ def sensors():
     r = int(data["right_side_distance"] > border_value)
     l45 = int(data["left_45_distance"] > border_value)
     r45 = int(data["right_45_distance"] > border_value)
-    return yaw, f, r, b, l#, l45, r45
+    return yaw, f, r, b, l #l45, r45
 
-#----------------------------------------------------------------------------------
 
-token = f""
-#run_with_UI = check_simulator()
-border_value = 65
-run_with_UI = True
-run_with_UI = "cells" if run_with_UI else "python"
-#restart()
-position = [0,0,0]
-maze = [[1]*33] + [[1] + [0]*31 + [1]]*31 + [[1]*33]
-maze = np.array(maze)
+if __name__ == "__main__":
+    token = f"b1d9449e-1923-4ad5-834f-c2e8ec07d0ac483d9575-385e-472a-823b-c8cbf18a7720"
+    #run_with_UI = check_simulator()
+    border_value = 65
+    run_with_UI = True
+    run_with_UI = "cells" if run_with_UI else "python"
+    #restart()
+    position = [0,0,0]
+    maze = [[1]*33] + [[1] + [0]*31 + [1]]*31 + [[1]*33]
+    maze = np.array(maze)
 
-#while (True):
-print("yaw, f, b, l, r, l45, r45")
-for i in range(0):
-    print("--------------")
-    data = sensors()
-    if i == 0:
-        print(position)
+    #while (True):
+    print("yaw, f, b, l, r, l45, r45")
+    for i in range(0):
         print("--------------")
-    update_maze(data)
-    print(data, end=" ")
-    if (data[1] + data[2] + data[4]) >= 2: #проверка на развилку
-        #TODO: что делать при развилке
-        # print("Развилка")
-        # break
-        forward()
-    else:
-        if data[1]:
-            forward()
-        elif data[4]:
-            left()
-            forward()
-        elif data[2]:
-            right()
+        data = sensors()
+        if i == 0:
+            print(position)
+            print("--------------")
+        update_maze(data)
+        print(data, end=" ")
+        if (data[1] + data[2] + data[4]) >= 2: #проверка на развилку
+            #TODO: что делать при развилке
+            # print("Развилка")
+            # break
             forward()
         else:
-            right()
-            right()
+            if data[1]:
+                forward()
+            elif data[4]:
+                left()
+                forward()
+            elif data[2]:
+                right()
+                forward()
+            else:
+                right()
+                right()
 
-
-show_maze(maze)
-print(position)
-result = processing_maze_data(maze)
-result = result.tolist()
-print(result)
-send_matrix(result)
+    show_maze(maze)
+    print(position)
+    result = processing_maze_data(maze)
+    result = result.tolist()
+    print(result)
+    send_matrix(result)
