@@ -10,6 +10,7 @@ def show_maze(arr, type = 2):
         print(i, end=(" " * (3 - len(str(i)))))
     print("\n")
 
+
     ch = lambda x: "* " if x else "  "
     for i in range(l):
         index = str(l-i-1)
@@ -171,7 +172,7 @@ def sensors():
 
 #----------------------------------------------------------------------------------
 
-token = f"25822b31-3bc9-44ef-a4b0-228dbe6063db4088426d-cdbc-471d-bf8c-5161faaa3076"
+token = f""
 #run_with_UI = check_simulator()
 border_value = 65
 run_with_UI = True
