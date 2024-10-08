@@ -60,7 +60,7 @@ def update_maze(data, position, maze):
         print("wall right")
     
     print()
-
+    
 def processing_maze_data(maze):
     result_maze = [[0]*16]*16
     result_maze = np.array(result_maze)
