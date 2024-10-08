@@ -41,9 +41,9 @@ if __name__ == "__main__":
         print(f"\nCells_cnt: {cells_cnt}")
         update_maze(data, position, maze)
 
-        if (data[1] + data[2] + data[4]) > 1:
+        if (data[1] + data[2] + data[4]) > 1 and data[3] == 1:
 
-            if data[1] == 1 and data[2] == 1 and data[3] == 1:
+            if data[1] == 1 and data[2] == 1 and data[4] == 1:
                 calculated_coords = calculate_point(position, "r")
                 if f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in passed_forks:
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
                 forward(position, run_with_UI, token)
 
-            elif data[1] == 1 and data[2] == 1 and data[3] == 0:
+            elif data[1] == 1 and data[2] == 1 and data[4] == 0:
                 calculated_coords = calculate_point(position, "r")
                 if f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in passed_forks:
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
@@ -64,7 +64,7 @@ if __name__ == "__main__":
                 
                 forward(position, run_with_UI, token)
 
-            elif data[1] == 1 and data[2] == 0 and data[3] == 1:
+            elif data[1] == 1 and data[2] == 0 and data[4] == 1:
                 calculated_coords = calculate_point(position, "l")
                 if f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in passed_forks:
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
@@ -72,7 +72,7 @@ if __name__ == "__main__":
                 
                 forward(position, run_with_UI, token)
 
-            elif data[1] == 0 and data[2] == 1 and data[3] == 1:
+            elif data[1] == 0 and data[2] == 1 and data[4] == 1:
                 calculated_coords = calculate_point(position, "l")
                 if f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in passed_forks:
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")

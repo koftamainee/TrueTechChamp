@@ -63,10 +63,8 @@ def move(position, run_with_UI, token, data):
         forward(position, run_with_UI, token)
     elif data[4]:
         left(position, run_with_UI, token)
-        forward(position, run_with_UI, token)
     elif data[2]:
         right(position, run_with_UI, token)
-        forward(position, run_with_UI, token)
 
 def move_to(path, position, run_with_UI, token, maze, border_value):
     for direction in path:
