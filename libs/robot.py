@@ -1,20 +1,22 @@
 import requests
 import time
 from libs.utils import normalize_angle
+from libs.maze import update_maze
 
 def update_position(action, position):
     yaw = position[2]
     yaw = normalize_angle(yaw)
+
     if yaw == 0 or abs(yaw) == 180:
         if action == "forward":
-            position[1] += 1 if yaw == 0 else -1
+            position[1] += (1 if yaw == 0 else -1)
         elif action == "backward":
-            position[1] -= 1 if yaw == 0 else -1
-    else:
+            position[1] -= (1 if yaw == 0 else -1)
+    elif abs(yaw) == 90:
         if action == "forward":
-            position[0] += 1 if yaw == 90 else -1
+            position[0] += (1 if yaw == 90 else -1)
         elif action == "backward":
-            position[0] -= 1 if yaw == 90 else -1
+            position[0] -= (1 if yaw == 90 else -1)
 
     if action == "right":
         position[2] += 90
@@ -56,8 +58,7 @@ def sensors(run_with_UI, token, border_value):
     r = int(data["right_side_distance"] > border_value)
     return yaw, f, r, b, l
 
-def move(position, run_with_UI, token, data) -> str:
-    direction = ""
+def move(position, run_with_UI, token, data):
     if data[1]:
         forward(position, run_with_UI, token)
     elif data[4]:
@@ -66,7 +67,18 @@ def move(position, run_with_UI, token, data) -> str:
     elif data[2]:
         right(position, run_with_UI, token)
         forward(position, run_with_UI, token)
-    else:
-        right(position, run_with_UI, token)
-        right(position, run_with_UI, token)
-    return direction
+
+def move_to(path, position, run_with_UI, token, maze, border_value):
+    for direction in path:
+        time.sleep(0.04)
+        if direction == "f":
+            forward(position, run_with_UI, token)
+        elif direction == "r":
+            right(position, run_with_UI, token)
+        elif direction == "l":
+            left(position, run_with_UI, token)
+        elif direction == "b":
+            right(position, run_with_UI, token)
+            right(position, run_with_UI, token)
+    
+        data = sensors(run_with_UI, token, border_value)
