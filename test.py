@@ -1,90 +1,101 @@
-import math
-from collections import deque
+from queue import PriorityQueue
 
-def bfs(graph, start, target):
-    queue = deque([[start]])
-    visited = set([start])
-    
-    while queue:
-        path = queue.popleft()
-        
-        node = path[-1]
-        
-        if node == target:
-            return path 
+def parse_node(node_str):
+    """Converts a string representation of a node to a tuple of integers."""
+    return tuple(map(int, node_str.strip('[]').split(', ')))
 
-        for neighbor in graph.get(node, []):
-            if neighbor not in visited:
-                new_path = list(path)
-                new_path.append(neighbor)
-                queue.append(new_path)
-                visited.add(neighbor)
-    
+def stringify_node(node_tuple):
+    """Converts a tuple representation of a node back to string format."""
+    return f'[{node_tuple[0]}, {node_tuple[1]}]'
+
+def heuristic(a, b):
+    # Using Manhattan distance as a base heuristic
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+def a_star_with_turns(graph, start, target):
+    open_set = PriorityQueue()
+    start_tuple = parse_node(start)  # Convert start to tuple
+    target_tuple = parse_node(target)  # Convert target to tuple
+
+    open_set.put((0, start_tuple))
+
+    came_from = {}
+
+    # Initialize g_score and f_score with tuples as keys
+    g_score = {parse_node(node): float('inf') for node in graph}
+    g_score[start_tuple] = 0
+
+    f_score = {parse_node(node): float('inf') for node in graph}
+    f_score[start_tuple] = heuristic(start_tuple, target_tuple)
+
+    while not open_set.empty():
+        current = open_set.get()[1]
+
+        if current == target_tuple:
+            return reconstruct_path(came_from, current)
+
+        for neighbor in graph.get(stringify_node(current), []):
+            neighbor_tuple = parse_node(neighbor)  # Parse neighbor to tuple
+            
+            # Ensure g_score for neighbor is initialized
+            if neighbor_tuple not in g_score:
+                g_score[neighbor_tuple] = float('inf')  # Initialize if not present
+
+            # Determine the cost of the move, including turn costs
+            tentative_g_score = g_score[current] + 1  # Base cost for moving
+            
+            # Check if the move involves a turn
+            if current in came_from:
+                previous_direction = (current[0] - came_from[current][0], current[1] - came_from[current][1])
+                new_direction = (neighbor_tuple[0] - current[0], neighbor_tuple[1] - current[1])
+                
+                if previous_direction != new_direction:  # If the direction has changed, it's a turn
+                    tentative_g_score += 1  # Adding a turn cost
+
+            if tentative_g_score < g_score[neighbor_tuple]:
+                # This path to neighbor is better than any previous one
+                came_from[neighbor_tuple] = current
+                g_score[neighbor_tuple] = tentative_g_score
+                f_score[neighbor_tuple] = g_score[neighbor_tuple] + heuristic(neighbor_tuple, target_tuple)
+                open_set.put((f_score[neighbor_tuple], neighbor_tuple))
 
     return []
 
-# Function to calculate the direction based on two coordinates
-def get_direction(current, next):
-    x1, y1 = current
-    x2, y2 = next
-    if x2 > x1:
-        return 90  # Moving east
-    elif x2 < x1:
-        return -90  # Moving west
-    elif y2 > y1:
-        return 0  # Moving north
-    elif y2 < y1:
-        return 180  # Moving south
+def reconstruct_path(came_from, current):
+    total_path = [current]
+    while current in came_from:
+        current = came_from[current]
+        total_path.append(current)
+    # Convert path back to string format
+    return [stringify_node(node) for node in total_path[::-1]]
 
-# Function to adjust yaw angle and return the necessary command
-def get_turn_command(current_yaw, target_yaw):
-    diff = (target_yaw - current_yaw) % 360
-    if diff == 0:
-        return '', target_yaw
-    elif diff == 90 or diff == -270:
-        return 'r', target_yaw
-    elif diff == -90 or diff == 270:
-        return 'l', target_yaw
-    elif diff == 180 or diff == -180:
-        return 'b', target_yaw
-
-# Main function to generate the command string
-def generate_robot_commands(path, initial_yaw=0):
-    path = [eval(point) for point in path]  # Convert path strings to lists
-    commands = ''
-    yaw = initial_yaw  # Start with the initial yaw
-
-    for i in range(1, len(path)):
-        current = path[i-1]
-        next_point = path[i]
-        
-        # Get the direction we need to move
-        target_yaw = get_direction(current, next_point)
-        
-        # Adjust yaw and add turn command if necessary
-        turn_command, yaw = get_turn_command(yaw, target_yaw)
-        commands += turn_command
-        
-        # Move forward
-        commands += 'f'
-
-    return commands
-
-
-
-
-
-
-
-
-
-
-
-# Example graph as provided
-graph ={'[0, 0]': ['[1, 0]'], '[1, 0]': ['[2, 0]', '[0, 0]'], '[2, 0]': ['[1, 0]', '[2, 1]'], '[2, 1]': ['[2, 2]', '[2, 0]'], '[2, 2]': ['[2, 1]', '[1, 2]'], '[1, 2]': ['[1, 3]', '[2, 2]'], '[1, 3]': ['[2, 3]', '[1, 2]'], '[2, 3]': ['[1, 3]', '[2, 4]'], '[2, 4]': ['[3, 4]', '[2, 3]'], '[3, 4]': ['[3, 3]', '[2, 4]'], '[3, 3]': ['[3, 4]', '[4, 3]'], '[4, 3]': ['[3, 3]', '[4, 4]'], '[4, 4]': ['[5, 4]', '[4, 3]'], '[5, 4]': ['[4, 4]', '[5, 5]'], '[5, 5]': ['[5, 4]', '[4, 5]'], '[4, 5]': ['[4, 6]', '[5, 5]'], '[4, 6]': ['[4, 7]', '[4, 5]'], '[4, 7]': ['[5, 7]', '[4, 6]'], '[5, 7]': ['[6, 7]', '[4, 7]'], '[6, 7]': ['[5, 7]', '[6, 8]'], '[6, 8]': ['[6, 9]', '[7, 8]', '[6, 7]'], '[6, 9]': ['[7, 9]', '[6, 8]'], '[7, 9]': ['[8, 9]', '[6, 9]'], '[8, 9]': ['[7, 9]', '[8, 10]'], '[8, 10]': ['[9, 10]', '[8, 9]'], '[9, 10]': ['[8, 10]', '[9, 11]'], '[9, 11]': ['[9, 12]', '[9, 10]'], '[9, 12]': ['[10, 12]', '[9, 11]'], '[10, 12]': ['[11, 12]', '[9, 12]'], '[11, 12]': ['[11, 11]', '[10, 12]'], '[11, 11]': ['[10, 11]', '[11, 12]'], '[10, 11]': ['[11, 11]', '[10, 10]'], '[10, 10]': ['[10, 11]', '[11, 10]'], '[11, 10]': ['[12, 10]', '[10, 10]'], '[12, 10]': ['[13, 10]', '[11, 10]'], '[13, 10]': ['[14, 10]', '[12, 10]'], '[14, 10]': ['[13, 10]', '[14, 11]'], '[14, 11]': ['[14, 12]', '[14, 10]'], '[14, 12]': ['[14, 13]', '[14, 11]'], '[14, 13]': ['[14, 14]', '[14, 12]'], '[14, 14]': ['[14, 15]', '[14, 13]'], '[14, 15]': ['[13, 15]', '[15, 15]', '[14, 14]'], '[15, 15]': ['[15, 14]', '[14, 15]'], '[15, 14]': ['[15, 15]', '[15, 13]'], '[15, 13]': ['[15, 14]', '[15, 12]'], '[15, 12]': ['[15, 13]', '[15, 11]'], '[15, 11]': ['[15, 12]', '[15, 10]'], '[15, 10]': ['[15, 11]', '[15, 9]'], '[15, 9]': ['[14, 9]', '[15, 10]'], '[14, 9]': ['[15, 9]', '[13, 9]'], '[13, 9]': ['[14, 9]', '[12, 9]'], '[12, 9]': ['[13, 9]', '[12, 8]'], '[12, 8]': ['[11, 8]', '[12, 9]'], '[11, 8]': ['[12, 8]', '[11, 7]'], '[11, 7]': ['[10, 7]', '[11, 8]'], '[10, 7]': ['[10, 8]', '[11, 7]'], '[10, 8]': ['[10, 7]', '[10, 9]'], '[10, 9]': ['[9, 9]', '[11, 9]', '[10, 8]'], '[11, 9]': ['[10, 9]'], '[13, 15]': ['[12, 15]', '[14, 15]'], '[12, 15]': ['[13, 15]', '[12, 14]'], '[12, 14]': ['[11, 14]', '[12, 15]'], '[11, 14]': ['[10, 14]', '[12, 14]'], '[10, 14]': ['[9, 14]', '[11, 14]'], '[9, 14]': ['[9, 15]', '[10, 14]'], '[9, 15]': ['[8, 15]', '[10, 15]', '[9, 14]'], '[10, 15]': ['[9, 15]', '[11, 15]'], '[11, 15]': ['[10, 15]'], '[8, 15]': ['[7, 15]', '[9, 15]'], '[7, 15]': ['[8, 15]', '[7, 14]'], '[7, 14]': ['[6, 14]', '[7, 15]'], '[6, 14]': ['[5, 14]', '[7, 14]'], '[5, 14]': ['[5, 15]', '[6, 14]'], '[5, 15]': ['[4, 15]', '[6, 15]', '[5, 14]'], '[6, 15]': ['[5, 15]'], '[4, 15]': ['[3, 15]', '[5, 15]'], '[3, 15]': ['[4, 15]', '[3, 14]'], '[3, 14]': ['[3, 15]', '[4, 14]'], '[4, 14]': ['[4, 13]', '[3, 14]'], '[4, 13]': ['[4, 12]', '[4, 14]'], '[4, 12]': ['[4, 11]', '[4, 13]'], '[4, 11]': ['[4, 12]', '[5, 11]'], '[5, 11]': ['[6, 11]', '[4, 11]'], '[6, 11]': ['[7, 11]', '[5, 11]'], '[7, 11]': ['[7, 10]', '[6, 11]', '[7, 12]'], '[7, 10]': ['[6, 10]', '[7, 11]'], '[6, 10]': ['[5, 10]', '[7, 10]'], '[5, 10]': ['[4, 10]', '[6, 10]'], '[4, 10]': ['[5, 10]', '[4, 9]'], '[4, 9]': ['[3, 9]', '[4, 10]'], '[3, 9]': ['[2, 9]', '[4, 9]'], '[2, 9]': ['[2, 10]', '[3, 9]'], '[2, 10]': ['[2, 9]', '[1, 10]'], '[1, 10]': ['[1, 11]', '[2, 10]'], '[1, 11]': ['[1, 12]', '[1, 10]'], '[1, 12]': ['[1, 13]', '[1, 11]'], '[1, 13]': ['[1, 14]', '[1, 12]'], '[1, 14]': ['[1, 13]', '[0, 14]'], '[0, 14]': ['[0, 15]', '[1, 14]', '[0, 13]'], '[0, 13]': ['[0, 12]', '[0, 14]'], '[0, 12]': ['[0, 11]', '[0, 13]'], '[0, 11]': ['[0, 10]', '[0, 12]'], '[0, 10]': ['[0, 9]', '[0, 11]'], '[0, 9]': ['[0, 8]', '[0, 10]'], '[0, 8]': ['[0, 7]', '[0, 9]'], '[0, 7]': ['[0, 6]', '[0, 8]'], '[0, 6]': ['[0, 5]', '[0, 7]'], '[0, 5]': ['[0, 6]', '[1, 5]'], '[1, 5]': ['[2, 5]', '[1, 4]', '[0, 5]'], '[2, 5]': ['[3, 5]', '[1, 5]'], '[3, 5]': ['[2, 5]', '[3, 6]'], '[3, 6]': ['[3, 7]', '[3, 5]'], '[3, 7]': ['[3, 6]', '[2, 7]'], '[2, 7]': ['[3, 7]', '[2, 6]'], '[2, 6]': ['[1, 6]', '[2, 7]'], '[1, 6]': ['[1, 7]', '[2, 6]'], '[1, 7]': ['[1, 8]', '[1, 6]'], '[1, 8]': ['[1, 7]', '[1, 9]', '[2, 8]'], '[1, 9]': ['[1, 8]']}
 # Example usage
-start = "[0, 0]"
-target = "[15, 15]"
+graph = {
+    '[0, 0]': ['[1, 0]'], 
+    '[1, 0]': ['[2, 0]', '[0, 0]'],
+    '[2, 0]': ['[3, 0]', '[1, 0]'],
+    '[3, 0]': ['[3, 1]', '[2, 0]'],
+    '[3, 1]': ['[3, 2]', '[2, 1]', '[3, 0]'],
+    '[3, 2]': ['[4, 2]', '[3, 1]'],
+    '[4, 2]': ['[5, 2]', '[3, 2]'],
+    '[5, 2]': ['[6, 2]', '[4, 2]'],
+    '[6, 2]': ['[7, 2]', '[5, 2]'],
+    '[7, 2]': ['[7, 1]', '[6, 2]'],
+    '[7, 1]': ['[7, 0]', '[6, 1]', '[7, 2]'],
+    '[7, 0]': ['[7, 1]', '[6, 0]'],
+    '[6, 1]': ['[6, 2]', '[7, 1]'],
+    '[6, 0]': ['[7, 0]', '[5, 0]'],
+    '[5, 0]': ['[6, 0]', '[4, 0]'],
+    '[4, 0]': ['[5, 0]', '[3, 0]'],
+    '[3, 1]': ['[3, 0]', '[2, 1]'],
+    '[2, 1]': ['[2, 2]', '[1, 1]', '[3, 1]'],
+    '[1, 1]': ['[1, 2]', '[0, 1]', '[2, 1]'],
+    '[0, 1]': ['[0, 0]', '[1, 1]'],
+    '[1, 2]': ['[2, 2]', '[1, 1]', '[0, 2]'],
+    '[2, 2]': ['[2, 1]', '[3, 2]', '[1, 2]'],
+}
 
-path = bfs(graph, start, target)
-print(generate_robot_commands(path, 0))
+start = '[0, 0]'
+target = '[1, 2]'
+path = a_star_with_turns(graph, start, target)
+print("Path with fewer turns:", path)
