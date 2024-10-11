@@ -7,6 +7,8 @@ from libs.robot import forward, backward, right, left, sensors, move, move_to
 from libs.maze import update_maze, show_maze, processing_maze_data
 from libs.utils import normalize_angle, send_matrix, calculate_point
 from libs.graph import update_graph, a_star, generate_robot_commands
+import libs.API
+
 
 
 if __name__ == "__main__":
@@ -24,6 +26,7 @@ if __name__ == "__main__":
     passed = []
     cells_cnt = 0
     border_value = 65
+    loop = False
 
     while cells_cnt != 256:
         print(f"Forks stack: {path_stack}")
@@ -83,13 +86,14 @@ if __name__ == "__main__":
                 forward(position, run_with_UI, token)
             
         else:
-            if (data[1] + data[2] + data[4]) == 0:
+            if ((data[1] + data[2] + data[4]) == 0) or loop:
+                loop = False
                 print(f"Moving to {path_stack[-1]}...")
                 move_graph = a_star(maze_graph, f"[{coords[0]}, {coords[1]}]", path_stack.pop())
                 move_path = generate_robot_commands(move_graph, normalize_angle(position[2]))
                 move_to(move_path, position, run_with_UI, token, maze, border_value)
             else:
-                move(position, run_with_UI, token, data, passed)
+                loop = move(position, run_with_UI, token, data, passed)
 
         
 
