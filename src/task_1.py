@@ -22,6 +22,7 @@ if __name__ == "__main__":
     maze = [[1] * 33] + [[1] + [0] * 31 + [1]] * 31 + [[1] * 33]
     maze = np.array(maze)
     passed = []
+    loop = False
     cells_cnt = 0
     border_value = 65
 
@@ -83,13 +84,14 @@ if __name__ == "__main__":
                 forward(position, run_with_UI, token)
             
         else:
-            if (data[1] + data[2] + data[4]) == 0:
+            if ((data[1] + data[2] + data[4]) == 0) or loop:
+                loop = False
                 print(f"Moving to {path_stack[-1]}...")
                 move_graph = a_star(maze_graph, f"[{coords[0]}, {coords[1]}]", path_stack.pop())
                 move_path = generate_robot_commands(move_graph, normalize_angle(position[2]))
                 move_to(move_path, position, run_with_UI, token, maze, border_value)
             else:
-                move(position, run_with_UI, token, data)
+                loop = move(position, run_with_UI, token, data, passed)
 
         
 

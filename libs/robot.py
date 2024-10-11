@@ -1,6 +1,6 @@
 import requests
 import time
-from libs.utils import normalize_angle
+from libs.utils import normalize_angle, calculate_point
 from libs.maze import update_maze
 
 def update_position(action, position):
@@ -58,13 +58,15 @@ def sensors(run_with_UI, token, border_value):
     r = int(data["right_side_distance"] > border_value)
     return yaw, f, r, b, l
 
-def move(position, run_with_UI, token, data):
-    if data[1]:
+def move(position, run_with_UI, token, data, passed):
+    if data[1] and calculate_point(position, "f") not in passed:
         forward(position, run_with_UI, token)
-    elif data[4]:
+    elif data[4] and calculate_point(position, "l") not in passed:
         left(position, run_with_UI, token)
-    elif data[2]:
+    elif data[2] and calculate_point(position, "r") not in passed:
         right(position, run_with_UI, token)
+    else:
+        return True
 
 def move_to(path, position, run_with_UI, token, maze, border_value):
     for direction in path:
