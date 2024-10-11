@@ -89,7 +89,7 @@ if __name__ == "__main__":
                 move_path = generate_robot_commands(move_graph, normalize_angle(position[2]))
                 move_to(move_path, position, run_with_UI, token, maze, border_value)
             else:
-                move(position, run_with_UI, token, data)
+                move(position, run_with_UI, token, data, passed)
 
         
 
