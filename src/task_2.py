@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     position = [0, 0, 0]
     maze_graph = {}
-    path_stack = []
+    path_stack = ["[7,7]", "[7,8]", "[8,7]", "[8,8]"]
     passed_forks = []
     run_with_UI = True
     run_with_UI = "cells" if run_with_UI else "python"
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     while cells_cnt != 256:
         print(f"Forks stack: {path_stack}")
 
-        time.sleep(0.04)
+        time.sleep(0.15)
         data = sensors(run_with_UI, token, border_value)
         coords = position[:2]
         if coords not in passed:
@@ -96,11 +96,11 @@ if __name__ == "__main__":
 
     show_maze(maze)
 
-    move_graph_1 = a_star(maze_graph, f"[0, 0]", f"[7, 7]")
-    move_path_1 = generate_robot_commands(move_graph_1, 0)
+    move_graph = a_star(maze_graph, f"[0, 0]", f"[7, 7]")
+    move_path = generate_robot_commands(move_graph, 0)
 
     reset_position()
-    move_to(move_path_1, position, run_with_UI, token, maze, border_value)
+    move_to(move_path, position, run_with_UI, token, maze, border_value)
 
 
 

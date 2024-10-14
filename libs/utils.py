@@ -9,7 +9,7 @@ def send_matrix(matrix):
     return res.json()
 
 def reset_position():
-    res = requests.post(f"http://127.0.0.1:8801/api/v1/matrix/reset?token=(token)", json = matrix)
+    res = requests.post(f"http://127.0.0.1:8801/api/v1/maze/restart?token=(token)")
 
 # move -- f, r, l, b
 def calculate_point(position, move):
