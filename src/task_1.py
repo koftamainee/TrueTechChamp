@@ -1,9 +1,8 @@
 import os
 import time
-import requests
 import numpy as np
 from dotenv import load_dotenv
-from libs.robot import forward, backward, right, left, sensors, move, move_to
+from libs.robot import forward, right, sensors, move, move_to
 from libs.maze import update_maze, show_maze, processing_maze_data
 from libs.utils import normalize_angle, send_matrix, calculate_point
 from libs.graph import update_graph, a_star, generate_robot_commands
@@ -35,10 +34,9 @@ if __name__ == "__main__":
         if coords not in passed:
             passed.append(coords)
             cells_cnt += 1
-        
-        
+
         update_graph(maze_graph, data, position)
-        
+
         print("------------------------")
         print(f"\nCells_cnt: {cells_cnt}")
         update_maze(data, position, maze)
