@@ -101,10 +101,3 @@ if __name__ == "__main__":
 
     reset_position()
     move_to(move_path, position, run_with_UI, token, maze, border_value)
-
-
-
-
-
-
-    
