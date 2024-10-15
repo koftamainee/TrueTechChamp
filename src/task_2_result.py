@@ -3,7 +3,6 @@ import requests
 import numpy as np
 from queue import PriorityQueue
 
-MOVE_TO_SLEEP = 0.2
 MOVE_SLEEP = 0.2
 
 # UTILS ------------------------------------------------------------
@@ -164,7 +163,7 @@ def move(position, run_with_UI, token, data, passed, finish_points, path_stack):
 
 def move_to(path, position, run_with_UI, token, maze, border_value):
     for direction in path:
-        time.sleep(MOVE_TO_SLEEP)
+        time.sleep(MOVE_SLEEP)
         if direction == "f":
             forward(position, run_with_UI, token)
         elif direction == "r":
