@@ -3,8 +3,8 @@ import requests
 import numpy as np
 from queue import PriorityQueue
 
-MOVE_TO_SLEEP = 0.1
-MOVE_SLEEP = 0.1
+MOVE_TO_SLEEP = 0.2
+MOVE_SLEEP = 0.2
 
 # UTILS ------------------------------------------------------------
 def normalize_angle(angle: int) -> int:
@@ -128,29 +128,38 @@ def sensors(run_with_UI, token, border_value):
     return yaw, f, r, b, l
 
 
-def move(position, run_with_UI, token, data, passed, finish_points):
+def move(position, run_with_UI, token, data, passed, finish_points, path_stack):
     if data[1] and calculate_point(position, "f") not in passed:
         if calculate_point(position, "f") not in finish_points:
             forward(position, run_with_UI, token)
         else:
-            update_graph(maze_graph, data, position, "f")
             right(position, run_with_UI, token)
             right(position, run_with_UI, token)
+            forward(position, run_with_UI, token)
+
 
     elif data[4] and calculate_point(position, "l") not in passed:
         if calculate_point(position, "l") not in finish_points:
             left(position, run_with_UI, token)
         else:
-            update_graph(maze_graph, data, position, "l")
+            right(position, run_with_UI, token)
+            right(position, run_with_UI, token)
+            forward(position, run_with_UI, token)
 
     elif data[2] and calculate_point(position, "r") not in passed:
         if calculate_point(position, "r") not in finish_points:
             right(position, run_with_UI, token)
         else:
-            update_graph(maze_graph, data, position, "r")
+            right(position, run_with_UI, token)
+            right(position, run_with_UI, token)
+            forward(position, run_with_UI, token)
 
     else:
-        return True
+        if len(path_stack) != 0:
+            return True
+        else:
+            right(position, run_with_UI, token)
+            right(position, run_with_UI, token)
 
 
 def move_to(path, position, run_with_UI, token, maze, border_value):
@@ -484,8 +493,8 @@ if __name__ == "__main__":
 
     position = [0, 0, 0]
     maze_graph = {}
-    finish_points = [[8, 8], [8, 7], [7, 8], [7, 7]]
-    path_stack = ["[7, 8]"]
+    finish_points = [[8, 8], [8, 7], [7, 7], [7, 8]]
+    path_stack = []
     passed_forks = []
     run_with_UI = True
     run_with_UI = "cells" if run_with_UI else "python"
@@ -495,6 +504,7 @@ if __name__ == "__main__":
     loop = False
     cells_cnt = 3
     border_value = 65
+    start_time = time.time()
 
     while cells_cnt != 256:
         print(f"Forks stack: {path_stack}")
@@ -512,6 +522,13 @@ if __name__ == "__main__":
         print(f"\nCells_cnt: {cells_cnt}")
         update_maze(data, position, maze)
 
+        if cells_cnt == 255:
+            path_stack.append("[7, 8]")
+            print(f"Moving to {path_stack[-1]}...")
+            move_graph = a_star(maze_graph, f"[{coords[0]}, {coords[1]}]", path_stack.pop())
+            move_path = generate_robot_commands(move_graph, normalize_angle(position[2]))
+            move_to(move_path, position, run_with_UI, token, maze, border_value)
+
         if (data[1] + data[2] + data[4]) > 1 and data[3] == 1:
 
             if data[1] == 1 and data[2] == 1 and data[4] == 1:
@@ -520,22 +537,18 @@ if __name__ == "__main__":
                         f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points)):
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
                     passed_forks.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
-                else:
-                    update_graph(maze_graph, data, position, "r")
 
                 calculated_coords = calculate_point(position, "l")
                 if f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in passed_forks and \
                         f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points)):
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
                     passed_forks.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
-                else:
-                    update_graph(maze_graph, data, position, "l")
 
                 calculated_coords = calculate_point(position, "f")
                 if (f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points))):
                     forward(position, run_with_UI, token)
                 else:
-                    update_graph(maze_graph, data, position, "f")
+                    left(position, run_with_UI, token)
 
             elif data[1] == 1 and data[2] == 1 and data[4] == 0:
                 calculated_coords = calculate_point(position, "r")
@@ -543,14 +556,12 @@ if __name__ == "__main__":
                         f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points)):
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
                     passed_forks.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
-                else:
-                    update_graph(maze_graph, data, position, "r")
 
                 calculated_coords = calculate_point(position, "f")
                 if (f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points))):
                     forward(position, run_with_UI, token)
                 else:
-                    update_graph(maze_graph, data, position, "f")
+                    right(position, run_with_UI, token)
 
             elif data[1] == 1 and data[2] == 0 and data[4] == 1:
                 calculated_coords = calculate_point(position, "l")
@@ -558,14 +569,12 @@ if __name__ == "__main__":
                         f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points)):
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
                     passed_forks.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
-                else:
-                    update_graph(maze_graph, data, position, "l")
 
                 calculated_coords = calculate_point(position, "f")
                 if (f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points))):
                     forward(position, run_with_UI, token)
                 else:
-                    update_graph(maze_graph, data, position, "f")
+                    left(position, run_with_UI, token)
 
             elif data[1] == 0 and data[2] == 1 and data[4] == 1:
                 calculated_coords = calculate_point(position, "l")
@@ -573,37 +582,36 @@ if __name__ == "__main__":
                         f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points)):
                     path_stack.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
                     passed_forks.append(f"[{calculated_coords[0]}, {calculated_coords[1]}]")
-                else:
-                    update_graph(maze_graph, data, position, "l")
 
                 calculated_coords = calculate_point(position, "r")
                 if (f"[{calculated_coords[0]}, {calculated_coords[1]}]" not in list(map(str, finish_points))):
                     right(position, run_with_UI, token)
                     forward(position, run_with_UI, token)
                 else:
-                    update_graph(maze_graph, data, position, "r")
+                    left(position, run_with_UI, token)
 
         else:
-            if (((data[1] + data[2] + data[4]) == 0) or loop or ((len(path_stack) == 1) and (cells_cnt == 255))) and (len(path_stack) != 0):
+            if (((data[1] + data[2] + data[4]) == 0) or loop) and (len(path_stack) != 0):
                 loop = False
                 print(f"Moving to {path_stack[-1]}...")
-                #print(((data[1] + data[2] + data[4]) == 0), loop, (len(path_stack) == 1), (cells_cnt == 255), (len(path_stack) != 0))
                 move_graph = a_star(maze_graph, f"[{coords[0]}, {coords[1]}]", path_stack.pop())
                 move_path = generate_robot_commands(move_graph, normalize_angle(position[2]))
                 move_to(move_path, position, run_with_UI, token, maze, border_value)
             else:
-                loop = move(position, run_with_UI, token, data, passed, finish_points)
+                loop = move(position, run_with_UI, token, data, passed, finish_points, path_stack)
 
 
     show_maze(maze)
 
     move_graph = a_star(maze_graph, f"[0, 0]", f"[7, 7]")
     move_path = generate_robot_commands(move_graph, 0)
-
+    print(f"---------- The maze was scanned for {time.time() - start_time} ----------")
     time.sleep(2)
     print("ARE YOU READY?")
     position = [0, 0, 0]
     reset_position()
 
     time.sleep(0.04)
+    start_time = time.time()
     move_to(move_path, position, run_with_UI, token, maze, border_value)
+    print(f"---------- The maze was passed for {time.time() - start_time} ----------")
